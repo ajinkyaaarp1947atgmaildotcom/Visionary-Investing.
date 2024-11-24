@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visionary Investing. | Predictive Intelligence Today for Tomorrow's Markets</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #10b981;
+            --dark: #111827;
+            --light: #f3f4f6;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--dark) 0%, #1e293b 100%);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .disclaimer {
+            text-align: center;
+            color: #94a3b8;
+            margin: 10px 0 30px;
+            font-size: 0.9rem;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #94a3b8;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 1rem;
+        }
+
+        button {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            height: 400px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--secondary);
+        }
+
+        #loadingIndicator {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Visionary Investing.</h1>
+            <p class="disclaimer">Predictive Intelligence Today for Tomorrow's Markets</p>
+            <p class="disclaimer">By Ajinkya Pawar</p>
+            <p class="disclaimer">AI-powered predictions based on historical data analysis. Please note that these are projections and not guaranteed outcomes.</p>
+        </header>
+
+        <div class="input-section">
+            <div class="input-group">
+                <div>
+                    <label for="stockSymbol">Stock Symbol</label>
+                    <input type="text" id="stockSymbol" placeholder="e.g., ANF" value="ANF">
+                </div>
+                <div>
+                    <label for="predictionDays">Prediction Window</label>
+                    <select id="predictionDays">
+                        <option value="10">10 Days</option>
+                        <option value="30">30 Days</option>
+                        <option value="90" selected>90 Days</option>
+                    </select>
+                </div>
+                <div>
+                    <label>&nbsp;</label>
+                    <button onclick="getPrediction()">Generate Prediction</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadingIndicator">Analyzing market data...</div>
+
+        <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Current Price</h3>
+                <div class="metric-value" id="currentPrice">--</div>
+            </div>
+            <div class="metric-card">
+                <h3>Predicted High</h3>
+                <div class="metric-value" id="predictedHigh">--</div>
+            </div>
+            <div class="metric-card">
+                <h3>Predicted Low</h3>
+                <div class="metric-value" id="predictedLow">--</div>
+            </div>
+            <div class="metric-card">
+                <h3>Confidence Score</h3>
+                <div class="metric-value" id="confidenceScore">--</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let priceChart = null;
+
+        function initChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            const gradientFill = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientFill.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
+            gradientFill.addColorStop(1, 'rgba(37, 99, 235, 0)');
+
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Historical Price',
+                        data: [],
+                        borderColor: '#2563eb',
+                        backgroundColor: gradientFill,
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Predicted Price',
+                        data: [],
+                        borderColor: '#10b981',
+                        borderDash: [5, 5],
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#f3f4f6'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function getPrediction() {
+            const symbol = document.getElementById('stockSymbol').value;
+            const days = document.getElementById('predictionDays').value;
+            
+            document.getElementById('loadingIndicator').style.display = 'block';
+
+            try {
+                // In a real implementation, this would be an API call to your Python backend
+                const response = await simulatePredictionAPI(symbol, days);
+                updateChart(response);
+                updateMetrics(response);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error generating prediction. Please try again.');
+            } finally {
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+        }
+
+        // Simulate API call (replace with actual API call in production)
+        function simulatePredictionAPI(symbol, days) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const historicalData = Array.from({length: 90}, (_, i) => 
+                        40 + Math.sin(i/10) * 5 + Math.random() * 2
+                    );
+                    const predictedData = Array.from({length: parseInt(days)}, (_, i) => 
+                        historicalData[historicalData.length - 1] + Math.sin(i/10) * 3 + Math.random() * 2
+                    );
+                    
+                    resolve({
+                        historicalData,
+                        predictedData,
+                        currentPrice: historicalData[historicalData.length - 1].toFixed(2),
+                        predictedHigh: Math.max(...predictedData).toFixed(2),
+                        predictedLow: Math.min(...predictedData).toFixed(2),
+                        confidenceScore: (85 + Math.random() * 10).toFixed(1)
+                    });
+                }, 1500);
+            });
+        }
+
+        function updateChart(data) {
+            if (!priceChart) {
+                initChart();
+            }
+
+            const labels = Array.from({length: data.historicalData.length + data.predictedData.length}, 
+                (_, i) => `Day ${i + 1}`
+            );
+
+            priceChart.data.labels = labels;
+            priceChart.data.datasets[0].data = [...data.historicalData, ...Array(data.predictedData.length).fill(null)];
+            priceChart.data.datasets[1].data = [...Array(data.historicalData.length).fill(null), ...data.predictedData];
+            priceChart.update();
+        }
+
+        function updateMetrics(data) {
+            document.getElementById('currentPrice').textContent = `$${data.currentPrice}`;
+            document.getElementById('predictedHigh').textContent = `$${data.predictedHigh}`;
+            document.getElementById('predictedLow').textContent = `$${data.predictedLow}`;
+            document.getElementById('confidenceScore').textContent = `${data.confidenceScore}%`;
+        }
+
+        // Initialize the chart on page load
+        initChart();
+    </script>
+</body>
+</html>
